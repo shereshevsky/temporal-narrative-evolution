@@ -16,6 +16,7 @@ Usage:
 import os
 import json
 import re
+import unicodedata
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
@@ -77,7 +78,10 @@ def split_into_chapters(
     Split a literary text into chapters based on the schema's pattern.
 
     Uses regex-based chapter detection with fallback to equal-sized
-    segments if no chapter markers are found.
+    segments if no chapter markers are found. Patterns are matched with
+    re.MULTILINE only — case-sensitive, so heading words appearing in
+    running prose ("the book I gave him") don't create false boundaries.
+    Schemas needing case-insensitive parts use scoped (?i:...) groups.
 
     Args:
         text: Complete text of the literary work
@@ -91,7 +95,7 @@ def split_into_chapters(
     label = schema.chapter_label
 
     # Find all chapter boundaries
-    matches = list(re.finditer(pattern, text, re.IGNORECASE | re.MULTILINE))
+    matches = list(re.finditer(pattern, text, re.MULTILINE))
 
     if len(matches) >= 3:
         # Use detected chapter markers
@@ -207,6 +211,9 @@ class TemporalKGBuilder:
     """
     Builds a temporal knowledge graph by extracting from each chapter
     and tracking when entities and relationships first appear.
+
+    A single builder can be reused across works: extract_temporal()
+    resets all per-work state at the start of each run.
     """
 
     def __init__(self, config: TemporalExtractionConfig = None):
@@ -214,6 +221,8 @@ class TemporalKGBuilder:
         self.entities: dict[str, TemporalEntity] = {}
         self.relations: list[TemporalRelation] = []
         self.chapter_snapshots: list[dict] = []  # Metrics per chapter
+        # Fast lookup for relation dedup: (source_id, target_id, label) -> TemporalRelation
+        self._relation_index: dict[tuple, TemporalRelation] = {}
         self._setup_llm()
 
     def _setup_llm(self):
@@ -222,15 +231,27 @@ class TemporalKGBuilder:
             model=self.config.llm_model,
             temperature=self.config.temperature,
         )
+        # Embeddings are configured but not used during extraction —
+        # PropertyGraphIndex is built with embed_kg_nodes=False since we
+        # only read the graph structure, never query the index.
         Settings.embed_model = OpenAIEmbedding(model=self.config.embedding_model)
         Settings.chunk_size = self.config.chunk_size
         Settings.chunk_overlap = self.config.chunk_overlap
 
     def _normalize_id(self, name: str, label: str) -> str:
-        """Create a consistent entity ID from name and type."""
-        normalized = name.lower().strip()
-        normalized = re.sub(r'[^a-z0-9\s]', '', normalized)
-        normalized = re.sub(r'\s+', '_', normalized)
+        """
+        Create a consistent entity ID from name and type.
+
+        Unicode-aware: names in any script (Cyrillic, CJK, accented Latin)
+        keep their letters, so distinct non-ASCII names don't collapse
+        into a single ID.
+        """
+        normalized = unicodedata.normalize("NFKC", name).casefold().strip()
+        normalized = re.sub(r"[^\w\s]", "", normalized)
+        normalized = re.sub(r"\s+", "_", normalized)
+        if not normalized:
+            # Name was entirely punctuation/symbols — fall back to raw name
+            normalized = name.strip()
         return f"{label.lower()}_{normalized}"
 
     def _create_extractor(self, schema: LiterarySchema) -> SchemaLLMPathExtractor:
@@ -267,11 +288,14 @@ class TemporalKGBuilder:
         memory_store = SimplePropertyGraphStore()
         kg_extractor = self._create_extractor(schema)
 
-        # Build index with extraction
+        # Build index with extraction. embed_kg_nodes=False: we only read
+        # the graph store afterwards, so paying for node embeddings would
+        # be pure waste.
         PropertyGraphIndex.from_documents(
             documents=[document],
             kg_extractors=[kg_extractor],
             property_graph_store=memory_store,
+            embed_kg_nodes=False,
             show_progress=False,
         )
 
@@ -318,36 +342,28 @@ class TemporalKGBuilder:
 
         # Build entity name -> normalized ID mapping for relation merging
         name_to_id = {}
+        node_by_id = {}
         for node in nodes:
             name_to_id[node.id] = self._normalize_id(node.name, node.label)
             name_to_id[node.name] = self._normalize_id(node.name, node.label)
+            node_by_id[node.id] = node
 
         # Merge relations
         for rel in relations:
             source_eid = name_to_id.get(rel.source_id, rel.source_id)
             target_eid = name_to_id.get(rel.target_id, rel.target_id)
 
-            # Find source and target names
-            source_name = rel.source_id
-            target_name = rel.target_id
-            for node in nodes:
-                if node.id == rel.source_id:
-                    source_name = node.name
-                if node.id == rel.target_id:
-                    target_name = node.name
+            source_node = node_by_id.get(rel.source_id)
+            target_node = node_by_id.get(rel.target_id)
+            source_name = source_node.name if source_node else rel.source_id
+            target_name = target_node.name if target_node else rel.target_id
 
-            # Check if relation already exists
-            found = False
-            for existing_rel in self.relations:
-                if (existing_rel.source_id == source_eid and
-                    existing_rel.target_id == target_eid and
-                    existing_rel.label == rel.label):
-                    existing_rel.appearances.append(chapter_idx)
-                    found = True
-                    break
-
-            if not found:
-                self.relations.append(TemporalRelation(
+            key = (source_eid, target_eid, rel.label)
+            existing_rel = self._relation_index.get(key)
+            if existing_rel is not None:
+                existing_rel.appearances.append(chapter_idx)
+            else:
+                new_rel = TemporalRelation(
                     source_id=source_eid,
                     source_name=source_name,
                     target_id=target_eid,
@@ -356,7 +372,9 @@ class TemporalKGBuilder:
                     first_appearance=chapter_idx,
                     appearances=[chapter_idx],
                     properties=rel.properties,
-                ))
+                )
+                self.relations.append(new_rel)
+                self._relation_index[key] = new_rel
 
     def _compute_chapter_snapshot(self, chapter_idx: int, chapter: Chapter) -> dict:
         """Compute cumulative graph metrics at a given chapter."""
@@ -461,13 +479,19 @@ class TemporalKGBuilder:
 
         Args:
             text: Complete literary text
-            work_key: Schema identifier (iliad, crime, dune)
+            work_key: Schema identifier (iliad, crime, dune, generic)
             max_chapters: Optional cap on chapters to process
 
         Returns:
             Complete temporal extraction result as dict
         """
         schema = get_schema(work_key)
+
+        # Reset per-work state so a reused builder never merges two books
+        self.entities = {}
+        self.relations = []
+        self.chapter_snapshots = []
+        self._relation_index = {}
 
         print(f"\n{'='*60}")
         print(f"TEMPORAL KG EXTRACTION: {schema.name}")

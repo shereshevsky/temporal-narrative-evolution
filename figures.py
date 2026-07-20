@@ -13,6 +13,9 @@ auto-derives narrative groupings from the graph itself, so it works on any
 book. For the three demo works (iliad / crime / dune) you can pass
 ``--preset <work_key>`` to use the hand-curated groupings shipped under
 ``presets/`` — these match the exact look of the figures in the article.
+Note: preset narrative charts are hand-authored layouts and do not reflect
+the extracted data; only the default (auto-derived) mode visualizes real
+extraction output.
 
 CLI
 ---
@@ -52,7 +55,6 @@ from temporal_visualization import (
     ENTITY_TYPE_COLORS,
     WORK_COLORS,
     get_entity_color,
-    get_work_color,
 )
 
 try:
@@ -127,49 +129,64 @@ def _top_characters_by_degree(data: dict, top_n: int = 10) -> list[tuple[str, st
     return [(name, palette[i % len(palette)]) for i, (name, _) in enumerate(chosen)]
 
 
-def _auto_derive_groups(data: dict, characters: list[tuple[str, str]]) -> dict:
+def _auto_derive_groups(
+    data: dict,
+    characters: list[tuple[str, str]],
+    window: int = 2,
+) -> dict:
     """
     Derive scene-clusters from the temporal graph.
 
-    For each chapter, treat the subgraph of relations that *first appear* in
-    that chapter as a "co-presence" indicator. Connected components on the
-    tracked-character induced subgraph become groups; isolated characters
-    form their own singletons.
-    """
-    char_set = {c[0] for c in characters}
-    n_chapters = num_chapters(data)
-    if n_chapters == 0:
-        return {0.0: [char_set]}
+    For each sampled chapter, characters connected by a relation *active*
+    within the last `window` chapters (using each relation's `appearances`
+    list) are clustered together via connected components. Characters with
+    no recent shared activity fall back to singletons — so groups can
+    diverge again after converging, keeping the chart dynamic instead of
+    collapsing into one permanent blob.
 
-    # Bucket relations by chapter of first appearance
-    relations_by_chapter: dict[int, list[tuple[str, str]]] = defaultdict(list)
+    Ordering is deterministic: components are sorted by the position of
+    their first member in the `characters` list.
+    """
+    char_order = {name: i for i, (name, _) in enumerate(characters)}
+    char_set = set(char_order)
+    n_chapters = num_chapters(data)
+    ordered_singletons = [{name} for name, _ in characters]
+    if n_chapters == 0:
+        return {0.0: ordered_singletons}
+
+    # chapter -> set of (source, target) edges active in that chapter
+    active_by_chapter: dict[int, set] = defaultdict(set)
     for r in data["relations"]:
         if r["source_name"] in char_set and r["target_name"] in char_set:
-            relations_by_chapter[r["first_appearance"]].append(
-                (r["source_name"], r["target_name"])
-            )
+            appearances = r.get("appearances") or [r["first_appearance"]]
+            for ch in appearances:
+                active_by_chapter[ch].add((r["source_name"], r["target_name"]))
 
-    # Last-known group state, so a group "sticks" until contradicted
-    groups_at_chapter: dict[float, list[set[str]]] = {}
-    last_groups: list[set[str]] = [{c} for c in char_set]
+    groups_at_chapter: dict[float, list[set]] = {}
     sample_every = max(1, n_chapters // 12)  # ~12 sample points across the work
 
     for chapter in range(n_chapters):
-        # Update groups using all relations seen up to and including this chapter
-        edges = [(u, v) for ch in range(chapter + 1) for (u, v) in relations_by_chapter.get(ch, [])]
-        if edges:
-            g = nx.Graph()
-            g.add_nodes_from(char_set)
-            g.add_edges_from(edges)
-            components = [set(c) for c in nx.connected_components(g)]
-            last_groups = components
+        if chapter % sample_every != 0 and chapter != n_chapters - 1:
+            continue
 
-        if chapter % sample_every == 0 or chapter == n_chapters - 1:
-            pct = chapter / max(n_chapters - 1, 1)
-            groups_at_chapter[pct] = [set(g) for g in last_groups]
+        edges: set = set()
+        for ch in range(max(0, chapter - window + 1), chapter + 1):
+            edges |= active_by_chapter.get(ch, set())
+
+        g = nx.Graph()
+        g.add_nodes_from(char_set)
+        g.add_edges_from(edges)
+        components = [
+            sorted(comp, key=char_order.__getitem__)
+            for comp in nx.connected_components(g)
+        ]
+        components.sort(key=lambda comp: char_order[comp[0]])
+
+        pct = chapter / max(n_chapters - 1, 1)
+        groups_at_chapter[pct] = [set(comp) for comp in components]
 
     if 0.0 not in groups_at_chapter:
-        groups_at_chapter[0.0] = [{c} for c in char_set]
+        groups_at_chapter[0.0] = ordered_singletons
 
     return groups_at_chapter
 
@@ -594,18 +611,19 @@ def figure_cast_arrival_strip(
         ax.scatter(xs, ys, s=sizes, c=colors, alpha=0.7, edgecolors="black",
                    linewidths=0.4)
 
-        # Label the most prominent entities
+        # Label the most prominent entities, alternating above/below the
+        # strip by index so placement is deterministic across runs.
         top = sorted(
             entities,
             key=lambda e: e.get("total_appearances", len(e.get("appearances", [1]))),
             reverse=True,
         )[:15]
-        for e in top:
+        for i, e in enumerate(top):
             x = e["first_appearance"]
             ax.annotate(
                 e["name"][:18],
                 xy=(x, 0),
-                xytext=(0, 18 if hash(e["name"]) % 2 else -22),
+                xytext=(0, 18 if i % 2 == 0 else -22),
                 textcoords="offset points",
                 fontsize=7, ha="center",
                 color="#222",

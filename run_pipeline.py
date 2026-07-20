@@ -117,7 +117,7 @@ def run(args: argparse.Namespace) -> int:
     viz_dir = output_dir / "visualizations"
     saved = render_all_figures([kg_data], str(viz_dir), preset_keys)
 
-    print("\n=" * 1, "Pipeline complete.")
+    print("\nPipeline complete.")
     print(f"  KG:       {kg_path}")
     print(f"  Analysis: {analysis_path}")
     print(f"  Figures:  {len(saved)} written to {viz_dir}/")

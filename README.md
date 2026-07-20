@@ -5,7 +5,7 @@ graphs from literary works, with full temporal metadata: when each entity
 first appears, when each relationship forms, how the graph topology evolves.
 
 This is the companion code for the article
-[**"What Happens When You Extract a Knowledge Graph One Chapter at a Time? The Topology Tells the Story"**](https://medium.com/graph-quill/what-happens-when-you-extract-a-knowledge-graph-one-chapter-at-a-time-the-topology-tells-the-story-c4fc663102c0).
+[**"What Happens When You Extract a Knowledge Graph One Chapter at a Time? The Topology Tells the Story"**](https://medium.com).
 It produces the four figures in the article — **narrative chart**,
 **topology snapshots**, **relationship heatmap**, and **cast arrival** — from
 real extraction output, not synthetic data.
@@ -13,6 +13,11 @@ real extraction output, not synthetic data.
 > The Iliad's centralization drops in its middle third — not because Homer
 > lost focus, but because Achilles is sulking in his tent. The graph
 > *literally decentralizes*.
+
+**▶ Live demo — [The Narrative Observatory](https://shereshevsky.github.io/temporal-narrative-evolution/):**
+an animated radial instrument that plays each book's knowledge graph chapter
+by chapter. Time wraps the dial; connection is gravity. Drag your own
+`*_temporal_kg.json` onto the page to chart any book.
 
 The pipeline works on any chaptered text. Three preset schemas
 (*The Iliad*, *Crime and Punishment*, *Dune*) ship in the box; a
@@ -246,11 +251,11 @@ the auto-derived groupings will be used.
 
 This is part of a three-article series on KG extraction from literature.
 
-1. [Building Knowledge Graphs from Homer's Iliad](https://medium.com/graph-quill/building-knowledge-graphs-from-homers-iliad-open-domain-vs-schema-guided-extraction-ef0bf3874a33) — first-pass extraction,
+1. *Building Knowledge Graphs from Homer's Iliad* — first-pass extraction,
    single-document.
-2. [Knowledge Graphs Reveal the Hidden Architecture of Great Literature](https://medium.com/graph-quill/knowledge-graphs-reveal-the-hidden-architecture-of-great-literature-fa69798cc6b0) —
+2. *Knowledge Graphs Reveal the Hidden Architecture of Great Literature* —
    cross-work structural comparison (still single-pass per work).
-3. [This article](https://medium.com/graph-quill/what-happens-when-you-extract-a-knowledge-graph-one-chapter-at-a-time-the-topology-tells-the-story-c4fc663102c0) — chapter-by-chapter temporal extraction, narrative EKGs,
+3. **This article** — chapter-by-chapter temporal extraction, narrative EKGs,
    topology evolution.
 
 If you build something interesting on top of this, open an issue with a link

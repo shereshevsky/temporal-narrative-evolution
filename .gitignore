@@ -1,0 +1,58 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# --- Virtual envs ---
+.venv/
+venv/
+env/
+ENV/
+
+# --- IDE & OS ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# --- Environment ---
+.env
+.env.local
+
+# --- Local tooling ---
+.claude/
+
+# --- Medium article assets (published separately, not part of the framework) ---
+article.md
+cover.png
+cover2.png
+
+# --- Project artifacts ---
+# Source texts (users supply their own; do not commit copyrighted material)
+data/
+data/*
+
+# Pipeline outputs (regenerable; large; sometimes contain raw extraction text)
+output/
+sample_output/*.json
+
+# Common scratch / notebook outputs
+.ipynb_checkpoints/
+*.ipynb

@@ -190,6 +190,16 @@ GENERIC_VALIDATION = [
     ("OBJECT", "LOCATED_IN", "LOCATION"),
 ]
 
+# Spelled-out chapter numbers, 1–59 ("One" … "Fifty-Nine"). Longer words
+# come first so the regex engine prefers "Seventeen" over "Seven".
+_SPELLED_NUMBER = (
+    "Eleven|Twelve|Thirteen|Fourteen|Fifteen|Sixteen|Seventeen|Eighteen|"
+    "Nineteen|"
+    "(?:Twenty|Thirty|Forty|Fifty)"
+    "(?:-(?:One|Two|Three|Four|Five|Six|Seven|Eight|Nine))?|"
+    "One|Two|Three|Four|Five|Six|Seven|Eight|Nine|Ten"
+)
+
 
 # =============================================================================
 # Schema Registry
@@ -205,7 +215,12 @@ class LiterarySchema:
     validation_schema: list
     primary_structure: str      # hierarchical, radial, networked
     narrative_focus: str        # external_action, internal_psychology, systems
-    chapter_pattern: str        # regex pattern to split into chapters
+    chapter_pattern: str        # regex to split into chapters; matched with
+                                # re.MULTILINE only (case-sensitive). Anchor
+                                # headings with ^ and use (?i:...) for any
+                                # case-insensitive parts, so that words like
+                                # "book"/"part" in running prose don't create
+                                # false chapter boundaries.
     chapter_label: str          # what to call divisions (Book, Part, Chapter)
     expected_chapters: int      # approximate number of divisions
 
@@ -219,7 +234,7 @@ SCHEMA_REGISTRY = {
         validation_schema=ILIAD_VALIDATION,
         primary_structure="hierarchical",
         narrative_focus="external_action",
-        chapter_pattern=r"BOOK\s+([IVXLC]+)\b",
+        chapter_pattern=r"^\s*BOOK\s+([IVXLC]+)\b",
         chapter_label="Book",
         expected_chapters=24,
     ),
@@ -231,7 +246,7 @@ SCHEMA_REGISTRY = {
         validation_schema=CRIME_VALIDATION,
         primary_structure="radial",
         narrative_focus="internal_psychology",
-        chapter_pattern=r"PART\s+([IVXLC]+)\b",
+        chapter_pattern=r"^\s*PART\s+([IVXLC]+)\b",
         chapter_label="Part",
         expected_chapters=6,
     ),
@@ -243,7 +258,7 @@ SCHEMA_REGISTRY = {
         validation_schema=DUNE_VALIDATION,
         primary_structure="networked",
         narrative_focus="systems",
-        chapter_pattern=r"={3,}|BOOK\s+(ONE|TWO|THREE)",
+        chapter_pattern=r"^={3,}|^\s*BOOK\s+(ONE|TWO|THREE)\b",
         chapter_label="Section",
         expected_chapters=48,
     ),
@@ -255,11 +270,11 @@ SCHEMA_REGISTRY = {
         validation_schema=GENERIC_VALIDATION,
         primary_structure="networked",
         narrative_focus="external_action",
-        # Match common chapter markers: "Chapter 1", "CHAPTER VII",
-        # "Chapter One", "CHAPITRE I", or numeric headings on their own line.
+        # Match common chapter headings at line start: "Chapter 1",
+        # "CHAPTER VII", "Chapter Twenty-Three", "Chapitre IX", in any case.
         chapter_pattern=(
-            r"(?:^|\n)\s*(?:CHAPTER|Chapter|CHAPITRE|Chapitre)\s+"
-            r"([IVXLC]+|\d+|One|Two|Three|Four|Five|Six|Seven|Eight|Nine|Ten)\b"
+            r"^\s*(?i:CHAPTER|CHAPITRE)\s+"
+            rf"([IVXLC]+|\d+|(?i:{_SPELLED_NUMBER}))\b"
         ),
         chapter_label="Chapter",
         expected_chapters=20,
