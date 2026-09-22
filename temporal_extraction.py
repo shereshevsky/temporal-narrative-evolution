@@ -603,7 +603,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "work_key",
-        choices=["iliad", "crime", "dune", "generic"],
+        choices=["iliad", "crime", "dune", "cryptonomicon", "generic"],
         help="Schema to use: a preset (iliad/crime/dune) or 'generic' for any chaptered text"
     )
     parser.add_argument(

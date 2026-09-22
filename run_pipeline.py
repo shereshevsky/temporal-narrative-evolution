@@ -134,7 +134,7 @@ def main() -> None:
     )
     parser.add_argument(
         "--work-key", default="generic",
-        choices=["iliad", "crime", "dune", "generic"],
+        choices=["iliad", "crime", "dune", "cryptonomicon", "generic"],
         help="Schema to use. 'generic' works on any chaptered text.",
     )
     parser.add_argument(

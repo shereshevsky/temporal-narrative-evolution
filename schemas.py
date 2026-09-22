@@ -139,6 +139,125 @@ DUNE_VALIDATION = [
 
 
 # =============================================================================
+# CRYPTONOMICON SCHEMA
+# =============================================================================
+# A dual-timeline techno-thriller: a 1940s cryptography/war thread and a 1990s
+# start-up thread interleaved chapter by chapter. Ciphers and vessels are
+# first-class entity types because the plot literally runs on them. The
+# relation vocabulary is the one used by the hand-anchored demo constellation
+# in build_cryptonomicon_demo.py, so real extraction output lines up with it.
+
+CryptoEntityType = Literal[
+    "CHARACTER", "ORGANIZATION", "LOCATION", "TECHNOLOGY", "CIPHER",
+    "CONCEPT", "EVENT", "VESSEL", "OBJECT", "RESOURCE",
+]
+
+CryptoRelationType = Literal[
+    "ADVOCATES", "ALLIES_WITH", "BETRAYS", "BUILDS", "BURIES",
+    "CAPTURES", "CAUSES", "CHILD_OF", "COMMANDS", "COMMUNICATES_WITH",
+    "CRACKS", "DEPENDS_ON", "DIES_IN", "DISCOVERS", "FAMILY_OF",
+    "FIGHTS", "FOUNDS", "FRIEND_OF", "GRANDCHILD_OF", "INTERCEPTS",
+    "INVENTS", "INVESTS_IN", "KILLS", "KNOWS", "LEADS",
+    "LOCATED_IN", "LOVES", "MARRIES", "MEMBER_OF", "MENTORS",
+    "MOURNS", "OPPOSES", "PARENT_OF", "PARTICIPATES_IN", "PARTNERS_WITH",
+    "PLOTS_AGAINST", "POSSESSES", "PROTECTS", "RESCUES", "RULES",
+    "SALVAGES", "SEEKS", "SERVES", "STUDIES", "SUES",
+    "SURVIVES", "TRAVELS_TO", "USES", "WITNESSES", "WRITES",
+]
+
+CRYPTO_VALIDATION = [
+    ("CHARACTER", "ADVOCATES", "CONCEPT"), ("CHARACTER", "ALLIES_WITH", "CHARACTER"),
+    ("CHARACTER", "ALLIES_WITH", "ORGANIZATION"), ("CHARACTER", "BETRAYS", "CHARACTER"),
+    ("CHARACTER", "BUILDS", "LOCATION"), ("CHARACTER", "CAPTURES", "CHARACTER"),
+    ("CHARACTER", "CAUSES", "EVENT"), ("CHARACTER", "CHILD_OF", "CHARACTER"),
+    ("CHARACTER", "COMMANDS", "VESSEL"), ("CHARACTER", "COMMUNICATES_WITH", "CHARACTER"),
+    ("CHARACTER", "CRACKS", "CIPHER"), ("CHARACTER", "DIES_IN", "EVENT"),
+    ("CHARACTER", "DISCOVERS", "CONCEPT"), ("CHARACTER", "DISCOVERS", "LOCATION"),
+    ("CHARACTER", "DISCOVERS", "OBJECT"), ("CHARACTER", "DISCOVERS", "ORGANIZATION"),
+    ("CHARACTER", "DISCOVERS", "RESOURCE"), ("CHARACTER", "DISCOVERS", "VESSEL"),
+    ("CHARACTER", "FAMILY_OF", "CHARACTER"), ("CHARACTER", "FIGHTS", "CHARACTER"),
+    ("CHARACTER", "FIGHTS", "ORGANIZATION"), ("CHARACTER", "FOUNDS", "CONCEPT"),
+    ("CHARACTER", "FOUNDS", "LOCATION"), ("CHARACTER", "FOUNDS", "ORGANIZATION"),
+    ("CHARACTER", "FRIEND_OF", "CHARACTER"), ("CHARACTER", "GRANDCHILD_OF", "CHARACTER"),
+    ("CHARACTER", "INVENTS", "CIPHER"), ("CHARACTER", "INVENTS", "CONCEPT"),
+    ("CHARACTER", "INVENTS", "TECHNOLOGY"), ("CHARACTER", "INVESTS_IN", "ORGANIZATION"),
+    ("CHARACTER", "KILLS", "CHARACTER"), ("CHARACTER", "KNOWS", "CHARACTER"),
+    ("CHARACTER", "LEADS", "EVENT"), ("CHARACTER", "LEADS", "ORGANIZATION"),
+    ("CHARACTER", "LOCATED_IN", "LOCATION"), ("CHARACTER", "LOCATED_IN", "VESSEL"),
+    ("CHARACTER", "LOVES", "CHARACTER"), ("CHARACTER", "MARRIES", "CHARACTER"),
+    ("CHARACTER", "MEMBER_OF", "ORGANIZATION"), ("CHARACTER", "MENTORS", "CHARACTER"),
+    ("CHARACTER", "MOURNS", "CHARACTER"), ("CHARACTER", "OPPOSES", "CHARACTER"),
+    ("CHARACTER", "OPPOSES", "LOCATION"), ("CHARACTER", "OPPOSES", "ORGANIZATION"),
+    ("CHARACTER", "OPPOSES", "TECHNOLOGY"), ("CHARACTER", "PARENT_OF", "CHARACTER"),
+    ("CHARACTER", "PARTICIPATES_IN", "EVENT"), ("CHARACTER", "PARTNERS_WITH", "CHARACTER"),
+    ("CHARACTER", "PARTNERS_WITH", "ORGANIZATION"), ("CHARACTER", "PLOTS_AGAINST", "ORGANIZATION"),
+    ("CHARACTER", "POSSESSES", "OBJECT"), ("CHARACTER", "POSSESSES", "RESOURCE"),
+    ("CHARACTER", "PROTECTS", "CIPHER"), ("CHARACTER", "PROTECTS", "CONCEPT"),
+    ("CHARACTER", "PROTECTS", "LOCATION"), ("CHARACTER", "RESCUES", "CHARACTER"),
+    ("CHARACTER", "RULES", "LOCATION"), ("CHARACTER", "SALVAGES", "RESOURCE"),
+    ("CHARACTER", "SALVAGES", "VESSEL"), ("CHARACTER", "SEEKS", "LOCATION"),
+    ("CHARACTER", "SEEKS", "OBJECT"), ("CHARACTER", "SEEKS", "ORGANIZATION"),
+    ("CHARACTER", "SEEKS", "RESOURCE"), ("CHARACTER", "SEEKS", "VESSEL"),
+    ("CHARACTER", "SERVES", "CHARACTER"), ("CHARACTER", "SERVES", "ORGANIZATION"),
+    ("CHARACTER", "STUDIES", "CIPHER"), ("CHARACTER", "STUDIES", "CONCEPT"),
+    ("CHARACTER", "STUDIES", "TECHNOLOGY"), ("CHARACTER", "SUES", "CHARACTER"),
+    ("CHARACTER", "SUES", "ORGANIZATION"), ("CHARACTER", "SURVIVES", "EVENT"),
+    ("CHARACTER", "TRAVELS_TO", "LOCATION"), ("CHARACTER", "USES", "CIPHER"),
+    ("CHARACTER", "USES", "TECHNOLOGY"), ("CHARACTER", "WITNESSES", "EVENT"),
+    ("CHARACTER", "WRITES", "CONCEPT"), ("CHARACTER", "WRITES", "OBJECT"),
+    ("CIPHER", "DEPENDS_ON", "CHARACTER"), ("CIPHER", "DEPENDS_ON", "ORGANIZATION"),
+    ("CONCEPT", "DEPENDS_ON", "CIPHER"), ("CONCEPT", "DEPENDS_ON", "RESOURCE"),
+    ("CONCEPT", "LOCATED_IN", "LOCATION"), ("EVENT", "DEPENDS_ON", "RESOURCE"),
+    ("EVENT", "LOCATED_IN", "LOCATION"), ("LOCATION", "CRACKS", "CIPHER"),
+    ("LOCATION", "INTERCEPTS", "ORGANIZATION"), ("LOCATION", "LOCATED_IN", "LOCATION"),
+    ("LOCATION", "PROTECTS", "CONCEPT"), ("LOCATION", "PROTECTS", "LOCATION"),
+    ("OBJECT", "LOCATED_IN", "VESSEL"), ("OBJECT", "POSSESSES", "CIPHER"),
+    ("ORGANIZATION", "ALLIES_WITH", "CHARACTER"), ("ORGANIZATION", "BUILDS", "LOCATION"),
+    ("ORGANIZATION", "BUILDS", "TECHNOLOGY"), ("ORGANIZATION", "BURIES", "OBJECT"),
+    ("ORGANIZATION", "BURIES", "RESOURCE"), ("ORGANIZATION", "CAUSES", "EVENT"),
+    ("ORGANIZATION", "DISCOVERS", "OBJECT"), ("ORGANIZATION", "DISCOVERS", "RESOURCE"),
+    ("ORGANIZATION", "DISCOVERS", "VESSEL"), ("ORGANIZATION", "FIGHTS", "ORGANIZATION"),
+    ("ORGANIZATION", "INTERCEPTS", "CIPHER"), ("ORGANIZATION", "INVENTS", "CONCEPT"),
+    ("ORGANIZATION", "INVESTS_IN", "ORGANIZATION"), ("ORGANIZATION", "KILLS", "CHARACTER"),
+    ("ORGANIZATION", "LOCATED_IN", "LOCATION"), ("ORGANIZATION", "MEMBER_OF", "ORGANIZATION"),
+    ("ORGANIZATION", "OPPOSES", "LOCATION"), ("ORGANIZATION", "OPPOSES", "VESSEL"),
+    ("ORGANIZATION", "PARTICIPATES_IN", "EVENT"), ("ORGANIZATION", "PARTNERS_WITH", "CHARACTER"),
+    ("ORGANIZATION", "PROTECTS", "CONCEPT"), ("ORGANIZATION", "SALVAGES", "RESOURCE"),
+    ("ORGANIZATION", "SERVES", "ORGANIZATION"), ("ORGANIZATION", "TRAVELS_TO", "LOCATION"),
+    ("ORGANIZATION", "USES", "CIPHER"), ("ORGANIZATION", "USES", "TECHNOLOGY"),
+    ("RESOURCE", "LOCATED_IN", "LOCATION"), ("RESOURCE", "LOCATED_IN", "VESSEL"),
+    ("TECHNOLOGY", "CRACKS", "CIPHER"), ("TECHNOLOGY", "INTERCEPTS", "ORGANIZATION"),
+    ("TECHNOLOGY", "LOCATED_IN", "LOCATION"), ("VESSEL", "LOCATED_IN", "LOCATION"),
+    ("VESSEL", "MEMBER_OF", "ORGANIZATION"), ("VESSEL", "POSSESSES", "CIPHER"),
+    ("VESSEL", "POSSESSES", "RESOURCE"),
+]
+
+# The novel's chapters are titled, not numbered. The splitter matches a line
+# that consists of one title and nothing else (case-insensitive), in any
+# order, so it also works on editions that number the chapters differently.
+_CRYPTONOMICON_CHAPTERS = (
+    "Prologue", "Barrens", "Novus Ordo Seclorum", "Seaweed", "Forays", "Indigo",
+    "The Spawn of Onan", "Burn", "Pedestrian", "Guadalcanal", "Galleon", "Nightmare",
+    "Londinium", "Corregidor", "Tube", "Meat", "Cycles", "Aloft",
+    "Non-disclosure", "Ultra", "Kinakuta", "Qwghlm House", "Electrical Till Corporation", "Crypt",
+    "Lizard", "The Castle", "Why", "Retrograde Maneuver", "Huffduff", "Pages",
+    "Ram", "Diligence", "Spearhead", "Morphium", "Suit", "Cracker",
+    "Sultan", "Skipping", "Mugs", "Yamamoto", "Antaeus", "Phreaking",
+    "Afloat", "Shinola", "Hostilities", "Funkspiel", "Heap", "Seeky",
+    "Cannibals", "Wreck", "Santa Monica", "Outpost", "Meteor", "Lavender Rose",
+    "Brisbane", "D\u00f6nitz", "Crunch", "Girl", "Conspiracy", "Hoard",
+    "Rocket", "Courting", "I.N.R.I.", "California", "Organ", "Home",
+    "Bundok", "Computer", "Caravan", "The General", "Origin", "Golgotha",
+    "Seattle", "Rock", "The Most Cigarettes", "Christmas 1944", "Pulse", "Buddha",
+    "Pontifex", "Glory", "The Primary", "Deluge", "Bust", "The Battle of Manila",
+    "Captivity", "Glamour", "Wisdom", "Fall", "Metis", "Slaves",
+    "Arethusa", "The Basement", "Akihabara", "Project X", "Landfall", "Goto-sama",
+    "R.I.P.", "Return", "Cribs", "Cayuse", "Black Chamber", "Passage",
+    "Liquidity",
+)
+
+
+# =============================================================================
 # GENERIC SCHEMA (works on any chaptered text)
 # =============================================================================
 
@@ -261,6 +380,20 @@ SCHEMA_REGISTRY = {
         chapter_pattern=r"^={3,}|^\s*BOOK\s+(ONE|TWO|THREE)\b",
         chapter_label="Section",
         expected_chapters=48,
+    ),
+    "cryptonomicon": LiterarySchema(
+        name="Cryptonomicon",
+        work_key="cryptonomicon",
+        entity_types=CryptoEntityType,
+        relation_types=CryptoRelationType,
+        validation_schema=CRYPTO_VALIDATION,
+        primary_structure="networked",
+        narrative_focus="systems",
+        chapter_pattern=(
+            r"^\s*(?i:" + "|".join(re.escape(t) for t in _CRYPTONOMICON_CHAPTERS) + r")\s*$"
+        ),
+        chapter_label="Chapter",
+        expected_chapters=103,
     ),
     "generic": LiterarySchema(
         name="Generic Narrative",

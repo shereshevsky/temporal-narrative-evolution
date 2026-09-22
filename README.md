@@ -16,12 +16,24 @@ real extraction output, not synthetic data.
 
 **▶ Live demo — [The Narrative Observatory](https://shereshevsky.github.io/temporal-narrative-evolution/):**
 an animated radial instrument that plays each book's knowledge graph chapter
-by chapter. Time wraps the dial; connection is gravity. Drag your own
-`*_temporal_kg.json` onto the page to chart any book.
+by chapter. Time wraps the dial; connection is gravity. **Click any star** to open
+it: type, birth chapter, every chapter it is named in, and each chord it has formed,
+with the other end of every chord clickable. Drag your own
+`*_temporal_kg.json` onto the page to chart any book; if its entities carry a
+`properties.description`, the inspector shows it.
 
-The pipeline works on any chaptered text. Three preset schemas
-(*The Iliad*, *Crime and Punishment*, *Dune*) ship in the box; a
+The pipeline works on any chaptered text. Four preset schemas
+(*The Iliad*, *Crime and Punishment*, *Dune*, *Cryptonomicon*) ship in the box; a
 **generic schema** handles arbitrary books.
+
+The Observatory's fourth constellation, *Cryptonomicon*, is **hand-anchored
+from a chapter-by-chapter synopsis** rather than LLM-extracted (no copyright-free
+text exists): `build_cryptonomicon_demo.py` encodes every chapter's era, cast and
+relationships, writes `output/cryptonomicon_temporal_kg.json`, and injects it into
+the page. Entities carry `properties.era` (the timeline a star is born in) and
+`properties.bridge` (named in both timelines); the Observatory tints and rings
+them accordingly. Any extraction output that carries those two fields gets the
+same treatment.
 
 ---
 
@@ -179,6 +191,7 @@ to produce, plus the regex used to split the text into chapters.
 | `iliad`      | epic poetry             | `HERO, DEITY, MORTAL, ARMY, LOCATION, ARTIFACT, BATTLE`                    | `BOOK [I-XXIV]`        |
 | `crime`      | psychological novel     | `PROTAGONIST, CHARACTER, PSYCHOLOGICAL_STATE, LOCATION, INSTITUTION, IDEA, EVENT` | `PART [I-VI]`    |
 | `dune`       | sci-fi / world-building | `CHARACTER, FACTION, LOCATION, RESOURCE, TECHNOLOGY, CREATURE, CONCEPT, RITUAL, PROPHECY, TITLE` | `=== / BOOK ONE…`     |
+| `cryptonomicon` | dual-timeline techno-thriller | `CHARACTER, ORGANIZATION, LOCATION, TECHNOLOGY, CIPHER, CONCEPT, EVENT, VESSEL, OBJECT, RESOURCE` | titled chapters (`Barrens`, `Seaweed`, …) |
 | `generic`    | any chaptered novel     | `CHARACTER, LOCATION, ORGANIZATION, EVENT, OBJECT, CONCEPT`                | `Chapter \d+ / I-X`   |
 
 If your text doesn't match any chapter pattern, the splitter falls back to
